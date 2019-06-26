@@ -22,17 +22,8 @@ stack *pop(stack *head)
     return e;
 }
 
-int len(stack *head)
+
+char *ptos(char *s)
 {
-    statck *e;
-    int len;
 
-    e = head;
-    len = 0;
-    while (e != NULL) {
-        len++;
-        e = e->next;
-    }
-
-    return len;
 }
