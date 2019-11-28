@@ -1,12 +1,19 @@
 #ifndef __CHAT_H
 #define __CHAT_H
 
+#include "list.h"
+
 typedef struct client {
-    unit64_t id;         /* Client incrementtal unique ID.*/
-    int chatGroupId;     /* chat group ID*/
+    uint64_t id;         /* Client incrementtal unique ID.*/
+    unsigned int chatGroupId;     /* chat group ID*/
 } client;
 
 typedef struct chatDb {
     list *clients;
-}
+} chatDb;
+
+void sendMessageToClient(client *c, char *msg);
+void sendMessageToChatGroup(client *c, char *msg, int chatGroupId);
+
+
 #endif

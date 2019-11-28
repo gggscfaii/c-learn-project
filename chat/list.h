@@ -17,8 +17,8 @@ typedef struct list {
 #define listSetFreeMethod(l,m) ((l)->free = (m))
 
 list *listCreate(void);
-void listDelNode(list *list, void *value);
-list *listAddNodeHead(list *list, void *value);
-list *listAddNodeTail(list *list, void *value);
+void listDelNode(list *list, listNode *node);
+listNode *listAddNodeHead(list *list, void *value);
+listNode *listAddNodeTail(list *list, void *value);
 
 #endif
