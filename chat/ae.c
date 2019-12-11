@@ -17,7 +17,8 @@ aeEventLoop *aeCreateEventLoop(int setsize) {
     int i;
 
     if((eventLoop = malloc(sizeof(*eventLoop))) == NULL) goto err;
-    eventLoop->fired = zmalloc(sizeof(aeFiredEvent)*setsize);
+    eventLoop->evnets = malloc(sizeof(aeFileEvent)*setsize);
+    eventLoop->fired = malloc(sizeof(aeFiredEvent)*setsize);
     if(eventLoop->fired == NULL) goto err;
     eventLoop->maxfd = -1;
     eventLoop->setsize = setsize;
