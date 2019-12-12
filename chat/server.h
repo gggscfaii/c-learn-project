@@ -5,6 +5,8 @@
 #include "list.h"
 #include "ae.h"
 
+#define CONFIG_BINDADDR_MAX 16
+
 typedef struct client {
     uint64_t id;         /* Client incrementtal unique ID.*/
     uint32_t chatGroupId;     /* chat group ID*/
@@ -18,6 +20,9 @@ typedef struct chatDb {
 
 struct chatServer {
     list *clients;
+    int ipfd[CONFIG_BINDADDR_MAX];
+    int ipfd_count;
+    char neterr[ANET_ERR_LEN];
 };
 
 void sendMessageToClient(client *c, char *msg);

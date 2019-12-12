@@ -22,7 +22,8 @@ int anetTcpNonBlockBindConnect(char *err, const char *addr, int port, const char
 int anetTcpNonBlockBestEffortBindConnect(char *err, const char *addr, int port, const char *source_addr);
 int anetRead(int fd, char *buf, int count);
 int anetWrite(int fd, char *buf, int count);
-
+int anetNonBlock(char *err, int fd);
+int anetBlock(char *err, int fd);
 int anetTcpServer(char *err, int port, char *bindaddr, int backlog);
 int anetTcp6Server(char *err, int port, char *bindaddr, int backlog);
 
