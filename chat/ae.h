@@ -29,6 +29,7 @@ typedef struct aeEventLoop {
     int setsize;
     aeFileEvent *events;
     aeFiredEvent *fired;
+    void *apidata;
 } aeEventLoop;
 
 aeEventLoop *aeCreateEventLoop(int setsize);
