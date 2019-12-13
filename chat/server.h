@@ -23,6 +23,7 @@ struct chatServer {
     int ipfd[CONFIG_BINDADDR_MAX];
     int ipfd_count;
     char neterr[ANET_ERR_LEN];
+    aeEventLoop el;
 };
 
 void sendMessageToClient(client *c, char *msg);
