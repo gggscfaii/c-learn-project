@@ -26,5 +26,5 @@ int anetNonBlock(char *err, int fd);
 int anetBlock(char *err, int fd);
 int anetTcpServer(char *err, int port, char *bindaddr, int backlog);
 int anetTcp6Server(char *err, int port, char *bindaddr, int backlog);
-
+int anetTcpAccept(char *err, int s, char *ip, size_t ip_len, int *port);
 #endif

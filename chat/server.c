@@ -52,7 +52,7 @@ void initServer() {
 
     for (int i = 0; i < server.ipfd_count; i++) {
         if(aeCreateFileEvent(server.el, server.ipfd[i], AE_READABLE,
-                    proc, null) == AE_ERR) {
+                    acceptTcpHandle, null) == AE_ERR) {
             
         }
     }
@@ -66,3 +66,7 @@ int main(int argc, const char *argv[])
     return 0;
 }
 
+static void acceptTcpHandle(aeEventLoop *eventLoop, int fd, void *clientData, int mask)
+{
+    
+}

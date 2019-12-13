@@ -224,4 +224,38 @@ int anetTcp6Server(char *err, int port, char *bindaddr, int backlog)
     return _anetTcpServer(err, port, bindaddr, AF_INET6, backlog);
 }
 
+static int anetGenericAccept(char *err, int s, struct sockaddr *sa, socklen_t *len) {
+    int fd;
+    while(1) {
+        fd = accept(s,sa,len);
+        if(fd == -1) {
+            if(errno == EINTR)
+                continue;
+            else {
+                anetSetError(err, "accept: %s", strerror(errno));
+                return ANET_ERR;
+            }
+        }
+        break;
+    }
+    return fd;
+}
 
+int anetTcp(char *err, int s, char *ip, size_t ip_len, int *port) {
+    int fd;
+    struct sockaddr_storage sa;
+    socklet_t salen = sizeof(sa);
+    if((fd = anetGenericAccept(err,s,(struct sockaddr*)&sa,&salen)) == -1)
+        return ANET_ERR;
+
+    if (sa.ss_family == AF_INET) {
+        struct sockaddr_in *s = (struct sockadd_in *)sa;
+        if (ip) inet_ntop(AF_INET, (void*)&(s->sin_addr), ip, ip_len);
+        if (port) *port = ntohs(s->sin_port);
+    }
+    else {
+        struct sockaddr_in6 *s = (struct sockaddr_in6 *)&sa;
+        if (ip) inet_ntop(AF_INET6, (void*)&(s->sin6_addr),ip,ip_len);
+        if (port) *port = ntohs(s->sin6_port);
+    }
+}

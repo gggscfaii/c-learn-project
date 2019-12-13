@@ -9,7 +9,7 @@
 #define AE_WRITABLE 2
 #define AE_BARRIER 4
 
-typedef void aeFileProc(struct aeEventLoop *eventLoop, int fd, void *clientData, int mask);
+typedef void aeFileProc(aeEventLoop *eventLoop, int fd, void *clientData, int mask);
 
 
 typede struct aeFileEvent {

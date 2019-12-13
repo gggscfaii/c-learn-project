@@ -11,6 +11,7 @@ typedef struct client {
     uint64_t id;         /* Client incrementtal unique ID.*/
     uint32_t chatGroupId;     /* chat group ID*/
     char *msg;  /*write msg*/
+    int fd; /*file id*/
 } client;
 
 typedef struct chatDb {
@@ -26,6 +27,12 @@ struct chatServer {
     aeEventLoop el;
 };
 
+void acceptTcpHandle(aeEventLoop *eventLoop, int fd, void *clientData, int mask);
+client *createClient(int fd);
+void freeClient(client *c);
+void freeClientAsync(client *c);
+void readQueryFromClient(aeEventloop *el, int fd, void *privdata, int mask);
+void joinChatGroupId(client *c);
 void sendMessageToClient(client *c, char *msg);
 void sendMessageToChatGroup(char *msg, int chatGroupId);
 
