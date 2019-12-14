@@ -40,7 +40,7 @@ listNode *listAddNodeHead(list *list, void *value)
         return NULL;
 
     if(list->len == 0) {
-        list->tail = list->prev = node;
+        list->tail = list->head = node;
         node->prev = NULL;
         node->next = NULL;
     }
@@ -64,7 +64,7 @@ listNode *listAddNodeTail(list *list, void *value)
     if(list->len == 0) {
         list->tail = node;
         list->head = node;
-        node->prev = node->tail = NULL;
+        node->prev = list->tail = NULL;
     }
     else {
         node->prev = list->tail;

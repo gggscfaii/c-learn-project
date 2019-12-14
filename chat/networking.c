@@ -67,7 +67,7 @@ void readQueryFromClient(aeEventloop *el, int fd, void *privdata, int mask) {
     }
 
     if(c->msg[0] == 'j') {
-        joinChatGroupId(c);
+        joinChatGroupId(c, atoi(c->msg + 1));
     }
 
     if(c->msg[0] == 's') {
@@ -75,4 +75,26 @@ void readQueryFromClient(aeEventloop *el, int fd, void *privdata, int mask) {
     }
 
     free(c->msg);
+}
+
+#define MAX_ACCEPTS_PER_CALL 1000
+static void accpetCommonHandler(int fd, char *ip) {
+    client *c;
+    if ((c = createClient(fd)) == NULL) {
+        close(fd);
+    }
+}
+
+void acceptTcpHandler(aeEventLoop *el, int fd, void *privdata, int mask) {
+    int cport, cfd, max = MAX_ACCEPTS_PER_CALL;
+    char cip[NET_IP_STR_LEN];
+
+    while (max--) {
+        cfd = anetTcpAccept(server.neterr, fd, cip, sizeof(cip), &cport);
+        if (cfd == ANET_ERR) {
+            if(errno != EWOULDBLOCK);
+            return;
+        }
+        accpetCommonHandler(cfd,0,cip);
+    }
 }

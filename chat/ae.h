@@ -9,10 +9,9 @@
 #define AE_WRITABLE 2
 #define AE_BARRIER 4
 
-typedef void aeFileProc(aeEventLoop *eventLoop, int fd, void *clientData, int mask);
 
 
-typede struct aeFileEvent {
+typedef struct aeFileEvent {
     int mask;
     aeFileProc *rfileProc;
     aeFileProc *wfileProc;
@@ -30,8 +29,10 @@ typedef struct aeEventLoop {
     aeFileEvent *events;
     aeFiredEvent *fired;
     void *apidata;
+    int stop;
 } aeEventLoop;
 
+typedef void aeFileProc(aeEventLoop *eventLoop, int fd, void *clientData, int mask);
 aeEventLoop *aeCreateEventLoop(int setsize);
 void aeDeleteEventLoop(aeEventLoop *eventLoop);
 void aeStop(aeEvent *eventLoop);
@@ -39,6 +40,5 @@ int aeCreateFileEvent(aeEventLoop *eventLoop,int fd, int mask,
         aeFileProc *proc, void *clientData);
 void aeDeleteFileEvent(aeEventLoop *eventLoop, int fd, int mask);
 int aeProcessEvents(aeEventLoop *eventLoop);
-int aeWait(int fd, int mask, long long milliseconds);
 void aeMain(aeEventLoop *eventLoop);
 #endif

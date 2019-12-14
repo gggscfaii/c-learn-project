@@ -6,7 +6,7 @@
 #include "ae.h"
 
 #include <stdio.h>
-
+#include <unistd.h>
 /*=================================Globals===============================*/
 
 /* Global vars */
@@ -63,10 +63,32 @@ int main(int argc, const char *argv[])
 
     initServer();
 
+    aeMain(server.el);
+    aeStop(server.el);
     return 0;
 }
 
-static void acceptTcpHandle(aeEventLoop *eventLoop, int fd, void *clientData, int mask)
-{
-    
+void joinChatGroupId(client *c, int chatGroupId) {
+    c->chatGroupId = chatGroupId;
+}
+
+void sendMessageToClient(client *c, char *msg){
+    int nwritten;
+    nwritten = write(c->fd, msg, sizeof(msg));
+    if(nwritten == -1) {
+        if(errno == EGAIN) {
+            nwritten = 0;
+        }
+        else {
+            freeClientAsync(c);
+        }
+    }
+}
+
+void sendMessageToChatGroup(char *msg, int chatGroupId) {
+    client *c = (client*)server.clients->head;
+    while(c != NULL) {
+        if(c->chatGroupId == chatGroupId)
+            sendMessageToClient(c, msg);
+    }
 }

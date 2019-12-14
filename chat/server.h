@@ -6,6 +6,7 @@
 #include "ae.h"
 
 #define CONFIG_BINDADDR_MAX 16
+#define NET_IP_STR_LEN 46
 
 typedef struct client {
     uint64_t id;         /* Client incrementtal unique ID.*/
@@ -32,7 +33,7 @@ client *createClient(int fd);
 void freeClient(client *c);
 void freeClientAsync(client *c);
 void readQueryFromClient(aeEventloop *el, int fd, void *privdata, int mask);
-void joinChatGroupId(client *c);
+void joinChatGroupId(client *c, int chatGroupId);
 void sendMessageToClient(client *c, char *msg);
 void sendMessageToChatGroup(char *msg, int chatGroupId);
 
