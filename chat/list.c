@@ -76,3 +76,15 @@ listNode *listAddNodeTail(list *list, void *value)
     return node;
 }
 
+listNode *listSearchKey(list *list, void *key)
+{
+    listNode *node;
+    node = list->head;
+    while(node != NULL) {
+        if(key == node->value) {
+            return node;
+        }
+        node = node->next;
+    }
+    return NULL;
+}

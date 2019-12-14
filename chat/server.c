@@ -7,6 +7,9 @@
 
 #include <stdio.h>
 #include <unistd.h>
+#include <error.h>
+#include <errno.h>
+#include <stdlib.h>
 /*=================================Globals===============================*/
 
 /* Global vars */
@@ -43,7 +46,7 @@ int listenToPort(int port, int *fds, int *count) {
 void initServer() {
     server.clients = listCreate();
     server.el = aeCreateEventLoop(1024); 
-    if(listenToPort(6379, server.ipfd, server.ipfd_count) == C_ERR)
+    if(listenToPort(6379, server.ipfd, &server.ipfd_count) == C_ERR)
         exit(1);
 
     if(server.ipfd_count == 0) {
@@ -52,7 +55,7 @@ void initServer() {
 
     for (int i = 0; i < server.ipfd_count; i++) {
         if(aeCreateFileEvent(server.el, server.ipfd[i], AE_READABLE,
-                    acceptTcpHandle, null) == AE_ERR) {
+                    acceptTcpHandle, NULL) == AE_ERR) {
             
         }
     }
@@ -76,7 +79,7 @@ void sendMessageToClient(client *c, char *msg){
     int nwritten;
     nwritten = write(c->fd, msg, sizeof(msg));
     if(nwritten == -1) {
-        if(errno == EGAIN) {
+        if(errno == EAGAIN) {
             nwritten = 0;
         }
         else {

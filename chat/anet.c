@@ -9,7 +9,7 @@
 #include <netinet/tcp.h>
 #include <arpa/inet.h>
 #include <fcntl.h>
-#include <unstd.h>
+#include <unistd.h>
 #include <string.h>
 #include <netdb.h>
 #include <errno.h>
@@ -58,6 +58,15 @@ int anetBlock(char *err, int fd){
     return anetSetBlock(err,fd,0);
 }
 
+static int anetSetReuseAddr(char *err, int fd){
+    int yes = 1;
+    if(setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(yes)) == -1){
+        anetSetError(err, "setsockopt SO_REUSEADDR: %s", strerror(errno));
+        return ANET_ERR;
+    }
+    return ANET_OK;
+}
+
 #define ANET_CONNECT_NONE 0
 #define ANET_CONNECT_NONBLOCK 1
 #define ANET_CONNECT_BE_BINDING 2
@@ -66,7 +75,7 @@ static int anetTcpGenericConnect(char *err, const char *addr, int port,
 {
     int s = ANET_ERR, rv;
     char portstr[6]; /*strlen("65535") + 1; */
-    struct addrinfo hints, *serverinfo, *bservinfo, *p, *b;
+    struct addrinfo hints, *servinfo, *bservinfo, *p, *b;
 
     snprintf(portstr, sizeof(portstr), "%d", port);
     memset(&hints, 0, sizeof(hints));
@@ -82,10 +91,10 @@ static int anetTcpGenericConnect(char *err, const char *addr, int port,
             continue;
         if(anetSetReuseAddr(err,s) == ANET_ERR) goto error;
         if(flags & ANET_CONNECT_NONBLOCK && anetNonBlock(err,s) != ANET_OK)
-            go error;
+            goto error;
         if(source_addr){
             int bound = 0;
-            if ((rv = getaddrinfo(source_addr, NULL, &hints, &observerinfo)) != 0) {
+            if ((rv = getaddrinfo(source_addr, NULL, &hints, &bservinfo)) != 0) {
                 anetSetError(err, "%s", gai_strerror(rv));
                 goto error;
             }
@@ -108,7 +117,7 @@ static int anetTcpGenericConnect(char *err, const char *addr, int port,
                 goto end;
             close(s);
             s = ANET_ERR;
-            contiue;
+            continue;
         }
 
         goto end;
@@ -157,21 +166,27 @@ int anetTcpNonBlockBestEfforBindConnect(char *err, const char *addr, int port,
             ANET_CONNECT_NONBLOCK|ANET_CONNECT_BE_BINDING);
 }
 
-static int anetSetReuseAddr(char *err, int fd){
-    int yes = 1;
-    if(setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(yes)) == -1){
-        anetSetError(err, "setsockopt SO_REUSEADDR: %s", strerror(errno));
-        return ANET_ERR;
-    }
-    return ANET_OK;
-}
-
 static int anetV6Only(char *err, int s){
     int yes = 1;
     if(setsockopt(s,IPPROTO_IPV6,IPV6_V6ONLY,&yes,sizeof(yes)) == -1){
         anetSetError(err, "set sockopt: %s", strerror(errno));
         close(s);
         return ANET_ERR;
+    }
+    return ANET_OK;
+}
+
+static int anetListen(char *err, int s, struct sockaddr *sa, socklen_t len, int backlog) {
+    if (bind(s,sa,len) == -1) {
+        anetSetError(err, "bind:%s", strerror(errno));
+        close(s);
+        return ANET_ERR;
+    }
+
+    if (listen(s,backlog) == -1) {
+        anetSetError(err, "Listen: %s", strerror(errno));
+        close(s);
+        return ANET_ERR;        
     }
     return ANET_OK;
 }
@@ -189,14 +204,14 @@ static int _anetTcpServer(char *err, int port, char *bindaddr, int af, int backl
     hints.ai_flags = AI_PASSIVE;
 
     if((rv = getaddrinfo(bindaddr,_port, &hints,&servinfo)) != 0){
-        return anetSetError(err, "%s", gai_strerror(rv));
+        anetSetError(err, "%s", gai_strerror(rv));
         return ANET_ERR;
     }
     for(p = servinfo; p != NULL; p = p->ai_next){
         if((s = socket(p->ai_family,p->ai_socktype,p->ai_protocol)) == -1)
             continue;
 
-        if(af == AF_INET6 && anetV6ONly(err,s) == ANET_ERR) goto error;
+        if(af == AF_INET6 && anetV6Only(err,s) == ANET_ERR) goto error;
         if(anetSetReuseAddr(err,s) == ANET_ERR) goto error;
         if(anetListen(err,s,p->ai_addr,p->ai_addrlen,backlog) == ANET_ERR) s = ANET_ERR;
         goto end;
@@ -241,15 +256,15 @@ static int anetGenericAccept(char *err, int s, struct sockaddr *sa, socklen_t *l
     return fd;
 }
 
-int anetTcp(char *err, int s, char *ip, size_t ip_len, int *port) {
+int anetTcpAccept(char *err, int s, char *ip, size_t ip_len, int *port) {
     int fd;
     struct sockaddr_storage sa;
-    socklet_t salen = sizeof(sa);
+    socklen_t salen = sizeof(sa);
     if((fd = anetGenericAccept(err,s,(struct sockaddr*)&sa,&salen)) == -1)
         return ANET_ERR;
 
     if (sa.ss_family == AF_INET) {
-        struct sockaddr_in *s = (struct sockadd_in *)sa;
+        struct sockaddr_in *s = (struct sockaddr_in *)&sa;
         if (ip) inet_ntop(AF_INET, (void*)&(s->sin_addr), ip, ip_len);
         if (port) *port = ntohs(s->sin_port);
     }
@@ -258,4 +273,5 @@ int anetTcp(char *err, int s, char *ip, size_t ip_len, int *port) {
         if (ip) inet_ntop(AF_INET6, (void*)&(s->sin6_addr),ip,ip_len);
         if (port) *port = ntohs(s->sin6_port);
     }
+    return fd;
 }

@@ -36,13 +36,13 @@ static void aeApiDelEvent(aeEventLoop *eventLoop, int fd, int mask) {
 
 static int aeApiPoll(aeEventLoop *eventLoop, struct timeval *tvp) {
     aeApiState *state = eventLoop->apidata;
-    int retal, j, numevents = 0;
+    int retval, numevents = 0;
 
     memcpy(&state->_rfds, &state->rfds, sizeof(fd_set));
     memcpy(&state->_wfds, &state->wfds, sizeof(fd_set));
 
     retval = select(eventLoop->maxfd+1,
-            &state->_rfds, &sate->_wfds, NULL, tvp);
+            &state->_rfds, &state->_wfds, NULL, tvp);
     if(retval > 0) {
         for (int i = 0; i <= eventLoop->maxfd; i++) {
             int mask = 0;

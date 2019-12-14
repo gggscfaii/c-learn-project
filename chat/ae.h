@@ -10,7 +10,8 @@
 #define AE_BARRIER 4
 
 
-
+struct aeEventLoop;
+typedef void aeFileProc(struct aeEventLoop *eventLoop, int fd, void *clientData, int mask);
 typedef struct aeFileEvent {
     int mask;
     aeFileProc *rfileProc;
@@ -32,10 +33,9 @@ typedef struct aeEventLoop {
     int stop;
 } aeEventLoop;
 
-typedef void aeFileProc(aeEventLoop *eventLoop, int fd, void *clientData, int mask);
 aeEventLoop *aeCreateEventLoop(int setsize);
 void aeDeleteEventLoop(aeEventLoop *eventLoop);
-void aeStop(aeEvent *eventLoop);
+void aeStop(aeEventLoop *eventLoop);
 int aeCreateFileEvent(aeEventLoop *eventLoop,int fd, int mask,
         aeFileProc *proc, void *clientData);
 void aeDeleteFileEvent(aeEventLoop *eventLoop, int fd, int mask);

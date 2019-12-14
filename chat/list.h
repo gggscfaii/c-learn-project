@@ -20,5 +20,5 @@ list *listCreate(void);
 void listDelNode(list *list, listNode *node);
 listNode *listAddNodeHead(list *list, void *value);
 listNode *listAddNodeTail(list *list, void *value);
-
+listNode *listSearchKey(list *list, void *key);
 #endif

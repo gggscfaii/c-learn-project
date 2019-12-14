@@ -17,7 +17,7 @@ aeEventLoop *aeCreateEventLoop(int setsize) {
     int i;
 
     if((eventLoop = malloc(sizeof(*eventLoop))) == NULL) goto err;
-    eventLoop->evnets = malloc(sizeof(aeFileEvent)*setsize);
+    eventLoop->events = malloc(sizeof(aeFileEvent)*setsize);
     eventLoop->fired = malloc(sizeof(aeFiredEvent)*setsize);
     if(eventLoop->fired == NULL) goto err;
     eventLoop->maxfd = -1;
@@ -28,8 +28,8 @@ aeEventLoop *aeCreateEventLoop(int setsize) {
     }
 err:
     if(eventLoop) {
-        zfree(eventLoop->fired);
-        zfree(eventLoop);
+        free(eventLoop->fired);
+        free(eventLoop);
     }
     return NULL;
 }
@@ -53,7 +53,7 @@ int aeCreateFileEvent(aeEventLoop *eventLoop, int fd, int mask,
     if (aeApiAddEvent(eventLoop, fd, mask) == -1) {
         return AE_ERR;
     }
-    fd->mask |= mask;
+    fe->mask |= mask;
     if(mask & AE_READABLE) fe->rfileProc = proc;
     if(mask & AE_WRITABLE) fe->wfileProc = proc;
     fe->clientData = clientData;
@@ -72,13 +72,13 @@ void aeDeleteFileEvent(aeEventLoop *eventLoop, int fd, int mask)
     aeFileEvent *fe = &eventLoop->events[fd];
     if(fe->mask == AE_NONE) return;
 
-    if(mask & AE_WRITABLE) mask |= AEBARRIER;
+    if(mask & AE_WRITABLE) mask |= AE_BARRIER;
 
-    aeApiDelEvent(eventloop，fd, mask);
+    aeApiDelEvent(eventLoop,fd, mask);
     fe->mask = fe->mask & (~mask);
-    if (fd == eventLoop->maskfd && fe->mask == AE_NONE) {
+    if (fd == eventLoop->maxfd && fe->mask == AE_NONE) {
         int j;
-        for(j = eventLoop->maskfd-1; j>=0; j--)
+        for(j = eventLoop->maxfd-1; j>=0; j--)
             if(eventLoop->events[j].mask != AE_NONE) break;
         eventLoop->maxfd = j;
     }
@@ -91,10 +91,9 @@ int aeProcessEvents(aeEventLoop *eventLoop)
     numevents = aeApiPoll(eventLoop, NULL);
 
     for (int i = 0; i < numevents; i++) {
-        aeFileEvent *fe = &eventLoop->events[eventLoop->fired[j].fd];
-        int mask = eventLoop->fired[j].mask;
-        int fd = eventLoop->fired[j].fd;
-        int fired = 0;
+        aeFileEvent *fe = &eventLoop->events[eventLoop->fired[i].fd];
+        int mask = eventLoop->fired[i].mask;
+        int fd = eventLoop->fired[i].fd;
 
         if(fe->mask & mask & AE_READABLE) {
             fe->rfileProc(eventLoop, fd, fe->clientData, mask);

@@ -1,7 +1,12 @@
 
 #include "server.h"
+#include "list.h"
+#include "anet.h"
+
+#include <unistd.h>
 #include <stdlib.h>
 #include <string.h>
+#include <errno.h>
 #include <sys/socket.h>
 
 void linkClient(client *c) {
@@ -10,19 +15,21 @@ void linkClient(client *c) {
 
 void unlinkClient(client *c) {
     if(c->fd != -1) {
-        aeDeleteEventLoop(server.el,c->fd,AE_READABLE);
-        aeDeleteEventLoop(server.el,c->fd,AE_WRITABLE);
+        aeDeleteFileEvent(server.el,c->fd,AE_READABLE);
+        aeDeleteFileEvent(server.el,c->fd,AE_WRITABLE);
         close(c->fd);
         c->fd = -1;
     }
-    listDelNode(server.clients, c);
+
+    listNode *node = listSearchKey(server.clients, c);
+    listDelNode(server.clients, node);
 }
 
 client *createClient(int fd) {
-    client *c = malloc(sizeof(client));
+    client *c = (client*)malloc(sizeof(client));
     anetNonBlock(NULL, fd);
 
-    if(anetCreateFileEvent(server.el,fd,AE_READABLE,
+    if(aeCreateFileEvent(server.el,fd,AE_READABLE,
                 readQueryFromClient, c) == AE_ERR)
     {
         close(fd);
@@ -44,12 +51,12 @@ void freeClientAsync(client *c) {
     freeClient(c);
 }
 
-void readQueryFromClient(aeEventloop *el, int fd, void *privdata, int mask) {
+void readQueryFromClient(aeEventLoop *el, int fd, void *privdata, int mask) {
     client *c = (client*)privdata;
     int nread;
 
     if(c->msg == NULL) {
-        c->msg = malloc(1024);
+        c->msg = (char*)malloc(1024);
     }
     nread = read(fd, c->msg, 1024);
     if (nread == -1) {
@@ -95,6 +102,6 @@ void acceptTcpHandler(aeEventLoop *el, int fd, void *privdata, int mask) {
             if(errno != EWOULDBLOCK);
             return;
         }
-        accpetCommonHandler(cfd,0,cip);
+        accpetCommonHandler(cfd, cip);
     }
 }
