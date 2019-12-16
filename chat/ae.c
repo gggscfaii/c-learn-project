@@ -26,6 +26,7 @@ aeEventLoop *aeCreateEventLoop(int setsize) {
     for (int i = 0; i < setsize; i++) {
         eventLoop->events[i].mask = AE_NONE;
     }
+    return eventLoop;
 err:
     if(eventLoop) {
         free(eventLoop->fired);

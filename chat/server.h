@@ -33,7 +33,7 @@ struct chatServer {
 
 extern struct chatServer server;
 
-void acceptTcpHandle(aeEventLoop *eventLoop, int fd, void *clientData, int mask);
+void acceptTcpHandler(aeEventLoop *el, int fd, void *clientData, int mask);
 client *createClient(int fd);
 void freeClient(client *c);
 void freeClientAsync(client *c);

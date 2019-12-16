@@ -55,7 +55,7 @@ void initServer() {
 
     for (int i = 0; i < server.ipfd_count; i++) {
         if(aeCreateFileEvent(server.el, server.ipfd[i], AE_READABLE,
-                    acceptTcpHandle, NULL) == AE_ERR) {
+                    acceptTcpHandler, NULL) == AE_ERR) {
             
         }
     }
