@@ -89,9 +89,13 @@ void sendMessageToClient(client *c, char *msg){
 }
 
 void sendMessageToChatGroup(char *msg, int chatGroupId) {
-    client *c = (client*)server.clients->head;
-    while(c != NULL) {
+    client *c;
+    listNode *node;
+    node = server.clients->head;
+    while(node != NULL) {
+        c = (client*)node->value;
         if(c->chatGroupId == chatGroupId)
             sendMessageToClient(c, msg);
+        node = node->next; 
     }
 }
