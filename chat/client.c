@@ -12,6 +12,13 @@ static void connect() {
     }
 }
 
+static void readData() {
+   while(true) {
+       char buf
+       read(fd, __buf, __nbytes)
+   } 
+}
+
 int main(int argc, const char *argv[])
 {
     connect();
