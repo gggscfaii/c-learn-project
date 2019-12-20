@@ -75,9 +75,9 @@ void joinChatGroupId(client *c, int chatGroupId) {
     c->chatGroupId = chatGroupId;
 }
 
-void sendMessageToClient(client *c, char *msg){
+void sendMessageToClient(client *c, char *msg, int len){
     int nwritten;
-    nwritten = write(c->fd, msg, sizeof(msg));
+    nwritten = write(c->fd, msg, len);
     if(nwritten == -1) {
         if(errno == EAGAIN) {
             nwritten = 0;
@@ -88,14 +88,14 @@ void sendMessageToClient(client *c, char *msg){
     }
 }
 
-void sendMessageToChatGroup(char *msg, int chatGroupId) {
+void sendMessageToChatGroup(char *msg, int chatGroupId, int len) {
     client *c;
     listNode *node;
     node = server.clients->head;
     while(node != NULL) {
         c = (client*)node->value;
         if(c->chatGroupId == chatGroupId)
-            sendMessageToClient(c, msg);
+            sendMessageToClient(c, msg, len);
         node = node->next; 
     }
 }

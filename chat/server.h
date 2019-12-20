@@ -39,7 +39,7 @@ void freeClient(client *c);
 void freeClientAsync(client *c);
 void readQueryFromClient(aeEventLoop *el, int fd, void *privdata, int mask);
 void joinChatGroupId(client *c, int chatGroupId);
-void sendMessageToClient(client *c, char *msg);
-void sendMessageToChatGroup(char *msg, int chatGroupId);
+void sendMessageToClient(client *c, char *msg, int len);
+void sendMessageToChatGroup(char *msg, int chatGroupId, int len);
 
 #endif

@@ -39,6 +39,7 @@ listNode *listAddNodeHead(list *list, void *value)
     if((node=malloc(sizeof(*node))) == NULL)
         return NULL;
 
+    node->value = value;
     if(list->len == 0) {
         list->tail = list->head = node;
         node->prev = NULL;
@@ -61,6 +62,7 @@ listNode *listAddNodeTail(list *list, void *value)
     if((node=malloc(sizeof(*node))) == NULL)
         return NULL;
 
+    node->value = value;
     if(list->len == 0) {
         list->tail = node;
         list->head = node;

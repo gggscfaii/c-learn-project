@@ -27,6 +27,7 @@ void unlinkClient(client *c) {
 
 client *createClient(int fd) {
     client *c = (client*)malloc(sizeof(client));
+    c->fd = fd;
     anetNonBlock(NULL, fd);
 
     if(aeCreateFileEvent(server.el,fd,AE_READABLE,
@@ -36,7 +37,6 @@ client *createClient(int fd) {
         free(c);
         return NULL;
     }
-
     linkClient(c);
     return c;
 }
@@ -78,10 +78,11 @@ void readQueryFromClient(aeEventLoop *el, int fd, void *privdata, int mask) {
     }
 
     if(c->msg[0] == 's') {
-        sendMessageToChatGroup(c->msg, c->chatGroupId);
+        sendMessageToChatGroup(c->msg, c->chatGroupId, nread);
     }
 
     free(c->msg);
+    c->msg = NULL;
 }
 
 #define MAX_ACCEPTS_PER_CALL 1000
