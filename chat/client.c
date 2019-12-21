@@ -24,7 +24,7 @@ static void *readData(void *arg) {
        if((n=read(fd, buf, 1024)) < 0) {
             continue;    
        }
-       write(STDOUT_FILENO, buf, sizeof(buf));
+       write(STDOUT_FILENO, buf, n);
    }
    return NULL; 
 }

@@ -131,7 +131,7 @@ error:
         close(s);
         s = ANET_ERR;
     }
-end: 
+end:
     freeaddrinfo(servinfo);
 
     if(s == ANET_ERR && source_addr && (flags & ANET_CONNECT_BE_BINDING)){
@@ -153,14 +153,14 @@ int anetTcpNonBlockConnect(char *err, const char *addr, int port)
 }
 
 int anetTcpNonBlockBindConnect(char *err, const char *addr, int port,
-                               const char *source_addr)
+        const char *source_addr)
 {
     return anetTcpGenericConnect(err,addr,port,source_addr,
             ANET_CONNECT_NONBLOCK);
 }
 
 int anetTcpNonBlockBestEfforBindConnect(char *err, const char *addr, int port,
-                                        const char *source_addr)
+        const char *source_addr)
 {
     return anetTcpGenericConnect(err,addr,port,source_addr,
             ANET_CONNECT_NONBLOCK|ANET_CONNECT_BE_BINDING);
@@ -186,7 +186,7 @@ static int anetListen(char *err, int s, struct sockaddr *sa, socklen_t len, int 
     if (listen(s,backlog) == -1) {
         anetSetError(err, "Listen: %s", strerror(errno));
         close(s);
-        return ANET_ERR;        
+        return ANET_ERR;
     }
     return ANET_OK;
 }

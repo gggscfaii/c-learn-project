@@ -66,13 +66,13 @@ listNode *listAddNodeTail(list *list, void *value)
     if(list->len == 0) {
         list->tail = node;
         list->head = node;
-        node->prev = list->tail = NULL;
+        node->prev = node->next = NULL;
     }
     else {
         node->prev = list->tail;
         node->next = NULL;
-        list->tail = node;
         list->tail->next = node;
+        list->tail = node;
     }
     list->len++;
     return node;
