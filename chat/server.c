@@ -7,6 +7,7 @@
 
 #include <stdio.h>
 #include <unistd.h>
+#include <fcntl.h>
 #include <error.h>
 #include <errno.h>
 #include <stdlib.h>
@@ -61,11 +62,26 @@ void initServer() {
     }
 }
 
+void daemonsize(void) {
+    int fd;
+
+    if(fork() != 0) exit(0);
+    setsid();
+
+    if((fd = open("/dev/null", O_RDWR, 0)) != -1) {
+        dup2(fd, STDIN_FILENO);
+        dup2(fd, STDOUT_FILENO);
+        dup2(fd, STDERR_FILENO);
+        if(fd > STDERR_FILENO) close(fd);
+    }
+}
+
 int main(int argc, const char *argv[])
 {
 
     initServer();
 
+    daemonsize();
     aeMain(server.el);
     aeStop(server.el);
     return 0;
