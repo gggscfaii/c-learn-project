@@ -41,5 +41,12 @@ void readQueryFromClient(aeEventLoop *el, int fd, void *privdata, int mask);
 void joinChatGroupId(client *c, int chatGroupId);
 void sendMessageToClient(client *c, char *msg, int len);
 void sendMessageToChatGroup(char *msg, int chatGroupId, int len);
-
+#ifdef __GNUC__
+void serverLog(int level, const char *fmt, ...)
+    __attribute__((format(printf, 2, 3)));
+#else
+void serverLog(int level, const char *fmt, ...);
 #endif
+void serverLogRaw(int level, const char *msg);
+void serverLogFromHandler(int level, const char *msg);
+
