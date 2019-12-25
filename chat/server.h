@@ -8,6 +8,14 @@
 
 #define CONFIG_BINDADDR_MAX 16
 #define NET_IP_STR_LEN 46
+#define LOG_MAX_LEN 1024
+
+/* Log levels */
+#define LL_DEBUG 0
+#define LL_VERBOSE 1
+#define LL_NOTICE 2
+#define LL_WARNING 3
+#define LL_RAW (1<<10)
 
 #define C_OK 0
 #define C_ERR 1
@@ -29,6 +37,8 @@ struct chatServer {
     int ipfd_count;
     char neterr[ANET_ERR_LEN];
     aeEventLoop *el;
+    int verbosity;
+    char *logfile;
 };
 
 extern struct chatServer server;

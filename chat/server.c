@@ -11,6 +11,8 @@
 #include <error.h>
 #include <errno.h>
 #include <stdlib.h>
+#include <time.h>
+
 /*=================================Globals===============================*/
 
 /* Global vars */
@@ -115,3 +117,44 @@ void sendMessageToChatGroup(char *msg, int chatGroupId, int len) {
         node = node->next; 
     }
 }
+
+void serverLogRaw(int level, const char *msg) {
+    const int sysLogLevelMap[] = {LOG_DEBUG, LOG_INFO, LOG_NOTICE, LOG_WARING};
+    const char *c = ".-*#";
+    FILE *fp;
+    char buf[64];
+    int rawmod = (level & LL_RAW);
+    int log_to_stdout = server.logfile[0] == '\0';
+
+    level &= 0xff;
+    if(level < server.verbosity) return;
+
+    fp = log_to_stdout? stdout : fopen(server.logfile, "a");
+    if(!fp) return;
+
+    if (rawmod) {
+       fprintf(fp, "%s", msg);
+    }
+    else {
+       int off;
+       struct timeval tv;
+
+       gettimeofday(&tv, NULL);
+       nolo
+    }
+}
+
+void serverLog(int level, const char *fmt, ...) {
+    va_list ap;
+    char msg[LOG_MAX_LEN];
+
+    if((level&pxff) < server.verbosity) return;
+
+    va_start(ap, fmt);
+    vsnprintf(msg, sizeof(msg), fmt, ap);
+    va_end(ap);
+
+    serverLogRaw(level,msg);
+}
+
+
