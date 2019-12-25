@@ -12,6 +12,9 @@
 #include <errno.h>
 #include <stdlib.h>
 #include <time.h>
+#include <syslog.h>
+#include <stdarg.h>
+#include <sys/types.h>
 
 /*=================================Globals===============================*/
 
@@ -119,7 +122,7 @@ void sendMessageToChatGroup(char *msg, int chatGroupId, int len) {
 }
 
 void serverLogRaw(int level, const char *msg) {
-    const int sysLogLevelMap[] = {LOG_DEBUG, LOG_INFO, LOG_NOTICE, LOG_WARING};
+    const int sysLogLevelMap[] = {LOG_DEBUG, LOG_INFO, LOG_NOTICE, LOG_WARNING};
     const char *c = ".-*#";
     FILE *fp;
     char buf[64];
@@ -137,18 +140,25 @@ void serverLogRaw(int level, const char *msg) {
     }
     else {
        int off;
-       struct timeval tv;
+       time_t ctime;
+       struct tm *tm;
 
-       gettimeofday(&tv, NULL);
-       nolo
+       ctime = time(NULL);
+       tm = localtime(&ctime);
+       strftime(buf, sizeof(buf), "%d %b %Y %H:%M", tm);
+       fprintf(fp, "%d %c %s %s", (int)getpid(), c[level], buf, msg);
     }
+    fflush(fp);
+
+    if(!log_to_stdout) fclose(fp);
+    if(server.syslog_enabled)  syslog(sysLogLevelMap[level], "%s", msg);
 }
 
 void serverLog(int level, const char *fmt, ...) {
     va_list ap;
     char msg[LOG_MAX_LEN];
 
-    if((level&pxff) < server.verbosity) return;
+    if((level&0xff) < server.verbosity) return;
 
     va_start(ap, fmt);
     vsnprintf(msg, sizeof(msg), fmt, ap);

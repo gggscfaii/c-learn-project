@@ -37,6 +37,7 @@ struct chatServer {
     int ipfd_count;
     char neterr[ANET_ERR_LEN];
     aeEventLoop *el;
+    int syslog_enabled;
     int verbosity;
     char *logfile;
 };
@@ -60,3 +61,4 @@ void serverLog(int level, const char *fmt, ...);
 void serverLogRaw(int level, const char *msg);
 void serverLogFromHandler(int level, const char *msg);
 
+#endif
