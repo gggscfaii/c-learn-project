@@ -40,6 +40,7 @@ struct chatServer {
     int syslog_enabled;
     int verbosity;
     char *logfile;
+    int shutdown_asap;
 };
 
 extern struct chatServer server;
@@ -60,5 +61,5 @@ void serverLog(int level, const char *fmt, ...);
 #endif
 void serverLogRaw(int level, const char *msg);
 void serverLogFromHandler(int level, const char *msg);
-
+void setupSignalHandlers(void);
 #endif

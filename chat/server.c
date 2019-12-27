@@ -15,6 +15,7 @@
 #include <syslog.h>
 #include <stdarg.h>
 #include <sys/types.h>
+#include <signal.h>
 
 /*=================================Globals===============================*/
 
@@ -167,4 +168,31 @@ void serverLog(int level, const char *fmt, ...) {
     serverLogRaw(level,msg);
 }
 
+static void sigShutdownHandler(int sig) {
+    char *msg;
+    switch(sig) {
+        case SIGINT:
+            msg = "Receive SIGINT scheduling shutdown...";
+            break;
+        case SIGTERM:
+            msg = "Received SIGTERM scheduling shutdown...";
+            break;
+        default:
+            msg = "Received shutdown signal, scheduling shutdown...";
+    }
 
+    if(server.shutdown_asap && sig == SIGINT) {
+        serverLog(LL_WARNING, "You insis... exiting now.");
+        exit(1);
+    }
+    
+    serverLog(LL_WARNING, msg);
+    server.shutdown_asap = 1;
+}
+
+void setupSignalHandlers(void) {
+    struct sigaction act;
+
+    sigemptyset(&act.sa_mask);
+    
+}
