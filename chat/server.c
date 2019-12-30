@@ -4,6 +4,7 @@
 #include "list.h"
 #include "anet.h"
 #include "ae.h"
+#include "config.h"
 
 #include <stdio.h>
 #include <unistd.h>
@@ -190,9 +191,65 @@ static void sigShutdownHandler(int sig) {
     server.shutdown_asap = 1;
 }
 
+int openDirectLogFiledes(void) {
+    int log_to_stdout = server.logfile[0] == '\0';
+    int fd = log_to_stdout ?
+        STDOUT_FILENO :
+        open(server.logfile, O_APPEND|O_CREAT|O_WONLY, 0644);
+    return fd;
+}
+
+void closeDirectLogFiledes(int fd) {
+    int log_to_stdout = server.logfile[0] == '\0';
+    if(!log_to_stdout) close(fd);
+}
+
+void logStackTrace(uccontet_t *uc) {
+    void *trace[101];
+    int trace_size = 0, fd = openDirectLogFiledes();
+    
+    if(fd == -1) return;
+
+    trace_size = backtrace(trace+1, 100);
+    backtrace_symbols_fd(trace+1, trace_size, fd);
+    closeDirectLogFieldes(fd);
+}
+
+void sigsegvHandler(int sig, siginfo_t *info, void *secret) {
+    ucontext_t *uc = (ucontext_t)secret;
+    struct sigaction act;
+
+    serverLog(LL_WARNING,
+            "Chat crashed by signal:%d", sig);
+    if(sig == SIGSEGV || sig== SIGBUS) {
+        serverLog(LL_WARNING,
+        "Accessing addrss: %p", (void*)info->si_addr);
+    }
+
+    logStackTrace(uc);
+    sigemptyset(&act.sa_mask);
+    act.sa_flags = SA_NODEFER | SA_ONSTACK | SA_RESETHAND;
+    act.sa_handler = SIG_DFL;
+    sigaction(sig, &act, NULL);
+    kill(getpid(), sig);
+}
+
 void setupSignalHandlers(void) {
     struct sigaction act;
 
     sigemptyset(&act.sa_mask);
-    
+    act.sa_flags = 0;
+    act.sa_handler = sigShutdownHandler;
+    sigaction(SIGTERM, &act, NULL);
+    sigaction(SIGINT, &act, NULL);
+
+#ifdef HAVE_BACKTRACE
+    sigemptyset(&act.sa_mask);
+    act.sa_flags = SA_NODEFER | SA_RESETHAND | SA_SIGINFO;
+    act.sa_sigaction = sigsegvHandler;
+    sigaction(&SIGSEGV, &act, NULL);
+    sigaction(SIGBUS, &act, NULL);
+    sigaction(SIGFPE, &act, NULL);
+    sigaction(SIGILL, &act, NULL);
+#endif
 }
