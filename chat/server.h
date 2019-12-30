@@ -9,6 +9,7 @@
 #define CONFIG_BINDADDR_MAX 16
 #define NET_IP_STR_LEN 46
 #define LOG_MAX_LEN 1024
+#define CONFIG_DEFAULT_LOGFILE ""
 
 /* Log levels */
 #define LL_DEBUG 0

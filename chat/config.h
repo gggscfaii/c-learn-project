@@ -8,3 +8,5 @@
     || defined(__DragonFly__)
 #define HAVE_BACKTRACE 1
 #endif
+
+#endif

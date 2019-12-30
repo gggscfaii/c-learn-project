@@ -7,6 +7,7 @@
 #include "config.h"
 
 #include <stdio.h>
+#include <string.h>
 #include <unistd.h>
 #include <fcntl.h>
 #include <error.h>
@@ -18,6 +19,15 @@
 #include <sys/types.h>
 #include <signal.h>
 
+#ifdef HAVE_BACKTRACE
+#include <execinfo.h>
+#ifndef __OpenBSD__
+#include <ucontext.h>
+#else
+typedef ucontext_t sigcontext_t;
+#endif
+
+#endif
 /*=================================Globals===============================*/
 
 /* Global vars */
@@ -33,6 +43,7 @@ int listenToPort(int port, int *fds, int *count) {
         (*count)++;
     }
     else if(errno == EAFNOSUPPORT) {
+        serverLog(LL_WARNING, "Not listening to IPv6:unsupported");
         unsupported++;
     }
 
@@ -43,6 +54,7 @@ int listenToPort(int port, int *fds, int *count) {
             (*count)++;
         }
         else if(errno == EAFNOSUPPORT) {
+            serverLog(LL_WARING, "Not listening to IPv4:unsupported");
             unsupported++;
         }
     }
@@ -52,6 +64,13 @@ int listenToPort(int port, int *fds, int *count) {
 }
 
 void initServer() {
+    
+    signal(SIGHUP, SIG_IGN);
+    signal(SIGPIPE, SIG_IGN);
+    setupSignalHandlers();
+  
+    server.syslog_enabled = 1; 
+    server.logfile = strdup(CONFIG_DEFAULT_LOGFILE); 
     server.clients = listCreate();
     server.el = aeCreateEventLoop(1024); 
     if(listenToPort(6379, server.ipfd, &server.ipfd_count) == C_ERR)
@@ -87,8 +106,9 @@ int main(int argc, const char *argv[])
 {
 
     initServer();
-
+    
     daemonsize();
+    
     aeMain(server.el);
     aeStop(server.el);
     return 0;
@@ -173,7 +193,7 @@ static void sigShutdownHandler(int sig) {
     char *msg;
     switch(sig) {
         case SIGINT:
-            msg = "Receive SIGINT scheduling shutdown...";
+            msg = "Received SIGINT scheduling shutdown...";
             break;
         case SIGTERM:
             msg = "Received SIGTERM scheduling shutdown...";
@@ -187,40 +207,39 @@ static void sigShutdownHandler(int sig) {
         exit(1);
     }
     
-    serverLog(LL_WARNING, msg);
+    serverLog(LL_WARNING, "%s", msg);
     server.shutdown_asap = 1;
 }
 
-int openDirectLogFiledes(void) {
+int openDirectLogFiles(void) {
     int log_to_stdout = server.logfile[0] == '\0';
     int fd = log_to_stdout ?
         STDOUT_FILENO :
-        open(server.logfile, O_APPEND|O_CREAT|O_WONLY, 0644);
+        open(server.logfile, O_APPEND|O_CREAT|O_WRONLY, 0644);
     return fd;
 }
 
-void closeDirectLogFiledes(int fd) {
+void closeDirectLogFiles(int fd) {
     int log_to_stdout = server.logfile[0] == '\0';
     if(!log_to_stdout) close(fd);
 }
 
-void logStackTrace(uccontet_t *uc) {
+void logStackTrace(ucontext_t *uc) {
     void *trace[101];
-    int trace_size = 0, fd = openDirectLogFiledes();
+    int trace_size = 0, fd = openDirectLogFiles();
     
     if(fd == -1) return;
 
     trace_size = backtrace(trace+1, 100);
     backtrace_symbols_fd(trace+1, trace_size, fd);
-    closeDirectLogFieldes(fd);
+    closeDirectLogFiles(fd);
 }
 
 void sigsegvHandler(int sig, siginfo_t *info, void *secret) {
-    ucontext_t *uc = (ucontext_t)secret;
+    ucontext_t *uc = (ucontext_t*)secret;
     struct sigaction act;
 
-    serverLog(LL_WARNING,
-            "Chat crashed by signal:%d", sig);
+    serverLog(LL_WARNING, "Chat crashed by signal:%d", sig);
     if(sig == SIGSEGV || sig== SIGBUS) {
         serverLog(LL_WARNING,
         "Accessing addrss: %p", (void*)info->si_addr);
@@ -247,7 +266,7 @@ void setupSignalHandlers(void) {
     sigemptyset(&act.sa_mask);
     act.sa_flags = SA_NODEFER | SA_RESETHAND | SA_SIGINFO;
     act.sa_sigaction = sigsegvHandler;
-    sigaction(&SIGSEGV, &act, NULL);
+    sigaction(SIGSEGV, &act, NULL);
     sigaction(SIGBUS, &act, NULL);
     sigaction(SIGFPE, &act, NULL);
     sigaction(SIGILL, &act, NULL);
