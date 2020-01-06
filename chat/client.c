@@ -5,6 +5,38 @@
 #include <unistd.h>
 #include <pthread.h>
 
+typedef struct chatAeEvents {
+    aeEventLoop *loop;
+    int fd;
+    int reading, writing;
+} chatAeEvents;
+
+static void chatAeReReadEvent(aeEventLoop *el, int fd, void *privdata, int mask) {
+    
+}
+
+static void chatAeWriteEvent(aeEventLoop *el, int fd, void *privdata, int mask) {
+    redisAeEvents *e = (redisAeEvents*)privdata;
+
+}
+
+static void chatAeAddRead(void *privData) {
+   chatAeEvents *e = (chatAeEvents*)privData;
+   aeEventLoop *loop = e->loop;
+   if (!e->reading) {
+       e->reading = 1;
+       aeCreateFileEvent(loop, e->fd, AE_READABLE, cha)
+   }
+}
+
+static void chatAeAddWrite(void privdata) {
+    chatAeEvents *e = (chatAeEvents*)privdata;
+    aeEventLoop *loop = e->loop;
+    if(!e->writing) {
+        e->writing = 1;
+        aeCreateFileEvent(loop, e->fd, AE_WRITABLE,)
+    }
+}
 int fd;
 static void connect() {
     char *err;
