@@ -54,7 +54,7 @@ int listenToPort(int port, int *fds, int *count) {
             (*count)++;
         }
         else if(errno == EAFNOSUPPORT) {
-            serverLog(LL_WARING, "Not listening to IPv4:unsupported");
+            serverLog(LL_WARNING, "Not listening to IPv4:unsupported");
             unsupported++;
         }
     }

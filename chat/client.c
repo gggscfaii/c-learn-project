@@ -6,6 +6,7 @@
 #include <unistd.h>
 #include <pthread.h>
 #include <errno.h>
+#include <stdlib.h>
 
 #define CHAT_CONNECTED 0x1
 #define CHAT_DISCONNECTING 0x2
@@ -22,36 +23,62 @@ typedef struct chatAeEvents {
 } chatAeEvents;
 
 
+int chatCheckConnectDone(chatAeContext *c, int *completed) {
+    int rc = connect(c->fd, )
+}
+
 static void chatAeReReadEvent(aeEventLoop *el, int fd, void *privdata, int mask) {
     char buf[1024*16];
     int nread;
 
     chatAeEvents *e = (chatAeEvents*)privdata;
     nread = read(fd, buf, sizeof(buf));
-    if(nread <= 0) {
+    if(nread < 0) {
         if(errno == EAGAIN) {
             return;
         }
-        e->context->flags |=  
+    }
+    else if(nread == 0) {
+        if(fd != STDIN_FILENO)
+            e->context->flags |= CHAT_DISCONNECTING;
+    }
+    else {
+        if(fd != STDIN_FILENO)
+            write(STDOUT_FILENO, buf, sizeof(buf));
     }
 }
 
-static void chatAeWriteEvent(aeeventloop *el, int fd, void *privdata, int mask) {
+static void chatAeAddRead(void *privData) {
+    chatAeEvents *e = (chatAeEvents*)privData;
+    aeEventLoop *loop = e->loop;
+    if (!e->reading) {
+        e->reading = 1;
+        aeCreateFileEvent(loop, e->fd, AE_READABLE, chatAeReReadEvent, e);
+    }
+}
+
+static void chatAeWriteEvent(aeEventLoop *el, int fd, void *privdata, int mask) {
     char buf[1024*16];
     int nread;
 
-    chataeevents *e = (chataeevents*)privdata;
-    nread = read(fd, buf, sizeof(buf));
+    chatAeEvents *e = (chatAeEvents*)privdata;
+    if(fd == STDOUT_FILENO) {
+        nread = read(fd, buf, sizeof(buf));
+        if(nread < 0) {
+            if(errno == EAGAIN) {
+                return;
+            }
+        }
+        else if(nread == 0) {
+            fprintf(stderr, "EOF on stdin\n");
+        }
+        else {
+            write(e->fd, buf ,sizeof(buf));
+        }
+    }
+    e->context->flags |= CHAT_CONNECTED;
 
-}
-
-static void chatAeAddRead(void *privData) {
-   chatAeEvents *e = (chatAeEvents*)privData;
-   aeEventLoop *loop = e->loop;
-   if (!e->reading) {
-       e->reading = 1;
-       aeCreateFileEvent(loop, e->fd, AE_READABLE, chatAeWriteEvent, e);
-   }
+    chatAeAddRead(e);
 }
 
 static void chatAeAddWrite(void *privdata) {
@@ -59,56 +86,34 @@ static void chatAeAddWrite(void *privdata) {
     aeEventLoop *loop = e->loop;
     if(!e->writing) {
         e->writing = 1;
-        aeCreateFileEvent(loop, e->fd, AE_WRITABLE, chatAeAddWrite, e);
+        aeCreateFileEvent(loop, e->fd, AE_WRITABLE, chatAeWriteEvent, e);
     }
 }
 
-int fd;
-static void asyncConnect() {
+static void asyncConnect(chatAeEvents *events) {
+    int fd;
     char *err;
-    if((fd = anetTcpConnect(err, "127.0.0.1", 6379)) == ANET_ERR){
-        printf("connect server error.");
+
+    if((fd = anetTcpNonBlockConnect(err, "127.0.0.1", 6379)) == ANET_ERR){
+        printf("connect server error.%s", err);
     }
 
-    if(anetNonBlock(err, fd) == ANET_ERR) {
-        printf("anet not block error");
-    }
+    events->fd = fd;
+    chatAeAddWrite((void *)events);
+    aeCreateFileEvent(events->loop, STDIN_FILENO, AE_WRITABLE, chatAeReReadEvent, events);
 }
 
-static void *readData(void *arg) {
-    int n;
-    char buf[1024];
-    while(1) {
-       if((n=read(fd, buf, 1024)) < 0) {
-            continue;    
-       }
-       write(STDOUT_FILENO, buf, n);
-   }
-   return NULL; 
-}
 
 int main(int argc, const char *argv[])
 {
-    pthread_t tid;
-    char buf[1024];
-    int n;
 
-    connect();
-    if(pthread_create(&tid, NULL, readData, NULL) != 0) {
-        printf("start read thread error");
-        close(fd);
-        return 0;
-    }
+    chatAeEvents *events;
 
-    while(1) {
-        n = read(STDIN_FILENO, buf, 1024);
-        if(n < 0) {
-            printf("read stdin error");
-            continue;
-        }
+    events = (chatAeEvents*)malloc(sizeof(events));
+    events->loop = aeCreateEventLoop(50);
+    asyncConnect(events);
 
-        write(fd, buf, n);
-    }
+    aeMain(events->loop);
     return 0;
 }
 
