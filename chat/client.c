@@ -7,12 +7,18 @@
 #include <pthread.h>
 #include <errno.h>
 #include <stdlib.h>
+#include <sys/socket.h>
 
 #define CHAT_CONNECTED 0x1
 #define CHAT_DISCONNECTING 0x2
+#define CHAT_OK 1
+#define CHAT_ERR 0
 
 typedef struct chatAeContext {
     int flags;
+    int fd;
+    struct sockaddr *saddr;
+    size_t saddrlen;
 } chatAeContext;
 
 typedef struct chatAeEvents {
@@ -24,7 +30,24 @@ typedef struct chatAeEvents {
 
 
 int chatCheckConnectDone(chatAeContext *c, int *completed) {
-    int rc = connect(c->fd, )
+    int rc = connect(c->fd, (struct sockaddr *)c->saddr, c->saddrlen);
+    if (rc == 0) {
+       *completed = 1;
+    }
+
+    switch (errno) {
+        case EISCONN:
+            *completed = 1; 
+            return CHAT_OK;
+        case EALREADY:
+        case EINPROGRESS:
+        case EWOULDBLOCK:
+            *completed = 0;
+            return CHAT_OK;
+        default:
+            return CHAT_ERR;
+            
+    }
 }
 
 static void chatAeReReadEvent(aeEventLoop *el, int fd, void *privdata, int mask) {
