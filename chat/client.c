@@ -28,7 +28,6 @@ typedef struct chatAeEvents {
     int reading, writing;
 } chatAeEvents;
 
-
 int chatCheckConnectDone(chatAeContext *c, int *completed) {
     int rc = connect(c->fd, (struct sockaddr *)c->saddr, c->saddrlen);
     if (rc == 0) {
@@ -122,6 +121,7 @@ static void asyncConnect(chatAeEvents *events) {
     }
 
     events->fd = fd;
+    events->context->fd = fd;
     chatAeAddWrite((void *)events);
     aeCreateFileEvent(events->loop, STDIN_FILENO, AE_WRITABLE, chatAeReReadEvent, events);
 }
@@ -134,6 +134,8 @@ int main(int argc, const char *argv[])
 
     events = (chatAeEvents*)malloc(sizeof(events));
     events->loop = aeCreateEventLoop(50);
+    events->context = (chatAeContext*)malloc(sizeof(chatAeContext));
+    events->context->
     asyncConnect(events);
 
     aeMain(events->loop);
