@@ -71,7 +71,9 @@ static int anetSetReuseAddr(char *err, int fd){
 #define ANET_CONNECT_NONBLOCK 1
 #define ANET_CONNECT_BE_BINDING 2
 static int anetTcpGenericConnect(char *err, const char *addr, int port,
-        const char *source_addr, int flags)
+        const char *source_addr, int flags, 
+        struct sockaddr *ret_addr,
+        size_t *ret_size)
 {
     int s = ANET_ERR, rv;
     char portstr[6]; /*strlen("65535") + 1; */
@@ -112,6 +114,13 @@ static int anetTcpGenericConnect(char *err, const char *addr, int port,
             }
         }
 
+        if(ret_addr) {
+            ret_addr = p->ai_addr;
+        }
+
+        if(ret_size) {
+            ret_size = p->addrlen;
+        }
         if (connect(s,p->ai_addr,p->ai_addrlen) == -1) {
             if(errno == EINPROGRESS && flags & ANET_CONNECT_NONBLOCK)
                 goto end;
