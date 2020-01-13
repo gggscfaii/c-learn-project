@@ -18,7 +18,7 @@ typedef struct chatAeContext {
     int flags;
     int fd;
     struct sockaddr *saddr;
-    size_t saddrlen;
+    size_t *saddrlen;
 } chatAeContext;
 
 typedef struct chatAeEvents {
@@ -29,7 +29,7 @@ typedef struct chatAeEvents {
 } chatAeEvents;
 
 int chatCheckConnectDone(chatAeContext *c, int *completed) {
-    int rc = connect(c->fd, (struct sockaddr *)c->saddr, c->saddrlen);
+    int rc = connect(c->fd, (struct sockaddr *)c->saddr, *c->saddrlen);
     if (rc == 0) {
        *completed = 1;
     }
@@ -82,8 +82,17 @@ static void chatAeAddRead(void *privData) {
 static void chatAeWriteEvent(aeEventLoop *el, int fd, void *privdata, int mask) {
     char buf[1024*16];
     int nread;
+    int completed = 0;
 
     chatAeEvents *e = (chatAeEvents*)privdata;
+    if(chatCheckConnectDone(e->context, &completed) == CHAT_ERR) {
+        return;
+    }
+
+    if(completed == 0) {
+        return;
+    }
+
     if(fd == STDOUT_FILENO) {
         nread = read(fd, buf, sizeof(buf));
         if(nread < 0) {
@@ -115,15 +124,18 @@ static void chatAeAddWrite(void *privdata) {
 static void asyncConnect(chatAeEvents *events) {
     int fd;
     char *err;
+    chatAeContext *context = events->context;
 
-    if((fd = anetTcpNonBlockConnect(err, "127.0.0.1", 6379)) == ANET_ERR){
+    events->context->saddr = malloc(16);
+    events->context->saddrlen = (size_t*)malloc(sizeof(size_t));
+    if((fd = anetTcpNonBlockConnect(err, "127.0.0.1", 6379, context->saddr, context->saddrlen)) == ANET_ERR){
         printf("connect server error.%s", err);
     }
 
     events->fd = fd;
     events->context->fd = fd;
     chatAeAddWrite((void *)events);
-    aeCreateFileEvent(events->loop, STDIN_FILENO, AE_WRITABLE, chatAeReReadEvent, events);
+    aeCreateFileEvent(events->loop, STDIN_FILENO, AE_WRITABLE, chatAeWriteEvent, events);
 }
 
 
@@ -135,7 +147,6 @@ int main(int argc, const char *argv[])
     events = (chatAeEvents*)malloc(sizeof(events));
     events->loop = aeCreateEventLoop(50);
     events->context = (chatAeContext*)malloc(sizeof(chatAeContext));
-    events->context->
     asyncConnect(events);
 
     aeMain(events->loop);

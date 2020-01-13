@@ -15,6 +15,7 @@
 #include <errno.h>
 #include <stdarg.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 #include "anet.h"
 
@@ -71,7 +72,7 @@ static int anetSetReuseAddr(char *err, int fd){
 #define ANET_CONNECT_NONBLOCK 1
 #define ANET_CONNECT_BE_BINDING 2
 static int anetTcpGenericConnect(char *err, const char *addr, int port,
-        const char *source_addr, int flags, 
+        const char *source_addr, int flags,
         struct sockaddr *ret_addr,
         size_t *ret_size)
 {
@@ -114,13 +115,11 @@ static int anetTcpGenericConnect(char *err, const char *addr, int port,
             }
         }
 
-        if(ret_addr) {
-            ret_addr = p->ai_addr;
+        if(ret_size) {
+            memcpy(ret_addr, p->ai_addr, p->ai_addrlen);
+            *ret_size = p->ai_addrlen;
         }
 
-        if(ret_size) {
-            ret_size = p->addrlen;
-        }
         if (connect(s,p->ai_addr,p->ai_addrlen) == -1) {
             if(errno == EINPROGRESS && flags & ANET_CONNECT_NONBLOCK)
                 goto end;
@@ -144,35 +143,35 @@ end:
     freeaddrinfo(servinfo);
 
     if(s == ANET_ERR && source_addr && (flags & ANET_CONNECT_BE_BINDING)){
-        return anetTcpGenericConnect(err,addr,port, NULL,flags);
+        return anetTcpGenericConnect(err,addr,port,NULL,flags,ret_addr,ret_size);
     }
     else{
         return s;
     }
 }
 
-int anetTcpConnect(char *err, const char *addr, int port)
+int anetTcpConnect(char *err, const char *addr, int port, struct sockaddr *ret_addr, size_t *ret_size)
 {
-    return anetTcpGenericConnect(err,addr,port,NULL,ANET_CONNECT_NONE);
+    return anetTcpGenericConnect(err,addr,port,NULL,ANET_CONNECT_NONE,ret_addr,ret_size);
 }
 
-int anetTcpNonBlockConnect(char *err, const char *addr, int port)
+int anetTcpNonBlockConnect(char *err, const char *addr, int port,struct sockaddr *ret_addr, size_t *ret_size)
 {
-    return anetTcpGenericConnect(err,addr,port,NULL,ANET_CONNECT_NONBLOCK);
+    return anetTcpGenericConnect(err,addr,port,NULL,ANET_CONNECT_NONBLOCK,ret_addr,ret_size);
 }
 
 int anetTcpNonBlockBindConnect(char *err, const char *addr, int port,
-        const char *source_addr, struct sockaddr )
+        const char *source_addr, struct sockaddr *ret_addr, size_t *ret_size)
 {
     return anetTcpGenericConnect(err,addr,port,source_addr,
-            ANET_CONNECT_NONBLOCK);
+            ANET_CONNECT_NONBLOCK,ret_addr,ret_size);
 }
 
 int anetTcpNonBlockBestEfforBindConnect(char *err, const char *addr, int port,
         const char *source_addr)
 {
     return anetTcpGenericConnect(err,addr,port,source_addr,
-            ANET_CONNECT_NONBLOCK|ANET_CONNECT_BE_BINDING);
+            ANET_CONNECT_NONBLOCK|ANET_CONNECT_BE_BINDING, NULL, NULL);
 }
 
 static int anetV6Only(char *err, int s){
