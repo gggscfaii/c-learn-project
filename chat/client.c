@@ -61,12 +61,12 @@ static void chatAeReReadEvent(aeEventLoop *el, int fd, void *privdata, int mask)
         }
     }
     else if(nread == 0) {
-        if(fd != STDIN_FILENO)
+        if(fd != STDOUT_FILENO)
             e->context->flags |= CHAT_DISCONNECTING;
     }
     else {
-        if(fd != STDIN_FILENO)
-            write(STDOUT_FILENO, buf, sizeof(buf));
+        if(fd != STDOUT_FILENO)
+            write(STDOUT_FILENO, buf, nread);
     }
 }
 
@@ -93,7 +93,7 @@ static void chatAeWriteEvent(aeEventLoop *el, int fd, void *privdata, int mask) 
         return;
     }
 
-    if(fd == STDOUT_FILENO) {
+    if(fd == STDIN_FILENO) {
         nread = read(fd, buf, sizeof(buf));
         if(nread < 0) {
             if(errno == EAGAIN) {
@@ -104,7 +104,7 @@ static void chatAeWriteEvent(aeEventLoop *el, int fd, void *privdata, int mask) 
             fprintf(stderr, "EOF on stdin\n");
         }
         else {
-            write(e->fd, buf ,sizeof(buf));
+            write(e->fd,buf,nread);
         }
     }
     e->context->flags |= CHAT_CONNECTED;
