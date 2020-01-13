@@ -7,6 +7,7 @@
 #define ANET_H
 
 #include <sys/types.h>
+#include <sys/socket.h>
 
 #define ANET_OK 0
 #define ANET_ERR -1
@@ -16,10 +17,10 @@
 #define ANET_NONE 0
 #define ANET_IP_ONLY (1<<0)
 
-int anetTcpConnect(char *err, const char *addr, int port);
-int anetTcpNonBlockConnect(char *err, const char *addr, int port);
-int anetTcpNonBlockBindConnect(char *err, const char *addr, int port, const char *source_addr);
-int anetTcpNonBlockBestEffortBindConnect(char *err, const char *addr, int port, const char *source_addr);
+int anetTcpConnect(char *err, const char *addr, int port, struct sockaddr *ret_addr, size_t *ret_len);
+int anetTcpNonBlockConnect(char *err, const char *addr, int port, struct sockaddr *ret_addr, size_t *ret_len);
+int anetTcpNonBlockBindConnect(char *err, const char *addr, int port, const char *source_addr, struct sockaddr *ret_addr, size_t *ret_len);
+int anetTcpNonBlockBestEffortBindConnect(char *err, const char *addr, int port, const char *source_addr, struct sockaddr *ret_addr, size_t *ret_len);
 int anetRead(int fd, char *buf, int count);
 int anetWrite(int fd, char *buf, int count);
 int anetNonBlock(char *err, int fd);

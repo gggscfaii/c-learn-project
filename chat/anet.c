@@ -162,7 +162,7 @@ int anetTcpNonBlockConnect(char *err, const char *addr, int port)
 }
 
 int anetTcpNonBlockBindConnect(char *err, const char *addr, int port,
-        const char *source_addr)
+        const char *source_addr, struct sockaddr )
 {
     return anetTcpGenericConnect(err,addr,port,source_addr,
             ANET_CONNECT_NONBLOCK);
