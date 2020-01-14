@@ -91,7 +91,7 @@ int aeProcessEvents(aeEventLoop *eventLoop)
 
     numevents = aeApiPoll(eventLoop, NULL);
 
-    for (int i = 0; i < numevents; i++) {
+    for (int i = numevents - 1; i >= 0; i--) {
         aeFileEvent *fe = &eventLoop->events[eventLoop->fired[i].fd];
         int mask = eventLoop->fired[i].mask;
         int fd = eventLoop->fired[i].fd;
